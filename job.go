@@ -26,7 +26,7 @@ func (s *Scheduler) Make(name string, cron string, function func(interface{}), d
 	if err != nil {
 		return fmt.Errorf("cron parse error: %v", err)
 	}
-	job.nextRun = job.cronExpression.Next(time.Now().UTC())
+	job.nextRun = job.cronExpression.Next(time.Now())
 
 	s.jobsRWMutex.Lock()
 	defer s.jobsRWMutex.Unlock()
@@ -59,7 +59,7 @@ func (s *Scheduler) Start(name string) error {
 
 	job.state = StateScheduled
 	atomic.AddInt64(&s.jobsNotStopped, 1)
-	job.timer = time.AfterFunc(job.nextRun.Sub(time.Now().UTC()), func() { s.run(job) })
+	job.timer = time.AfterFunc(job.nextRun.Sub(time.Now()), func() { s.run(job) })
 
 	return nil
 }
@@ -190,7 +190,7 @@ func (s *Scheduler) UpdateNextRun(name string, nextRun time.Time) error {
 
 	if job.timer.Stop() {
 		job.nextRun = nextRun
-		job.timer = time.AfterFunc(job.nextRun.Sub(time.Now().UTC()), func() { s.run(job) })
+		job.timer = time.AfterFunc(job.nextRun.Sub(time.Now()), func() { s.run(job) })
 		return nil
 	}
 
@@ -248,7 +248,7 @@ func (s *Scheduler) run(job *jobStruct) {
 		return
 	}
 	job.state = StateRunning
-	job.nextRun = job.cronExpression.Next(time.Now().UTC())
+	job.nextRun = job.cronExpression.Next(time.Now())
 	job.mutex.Unlock()
 
 	job.function(job.data)
@@ -260,7 +260,7 @@ func (s *Scheduler) run(job *jobStruct) {
 	}
 
 	job.state = StateScheduled
-	job.timer = time.AfterFunc(job.nextRun.Sub(time.Now().UTC()), func() { s.run(job) })
+	job.timer = time.AfterFunc(job.nextRun.Sub(time.Now()), func() { s.run(job) })
 }
 
 // doStoppingOrDeleting return true if stopping or deleting
